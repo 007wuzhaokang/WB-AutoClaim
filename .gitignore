@@ -1,0 +1,37 @@
+# ---- 凭据与运行数据（绝不入库）----
+data/
+*.vault
+vault.key
+vault.enc
+*.jsonl
+config.json
+
+# ---- 构建产物 ----
+dist/
+build/
+*.exe
+*.blob
+inline-assets.cjs
+bundle.cjs
+
+# ---- 依赖 ----
+node_modules/
+package-lock.json
+
+# ---- 日志与临时文件 ----
+*.log
+logs/
+tmp/
+.cache/
+_lnk_test.lnk
+desktop.ini
+.DS_Store
+Thumbs.db
+
+# ---- 本地编辑器 ----
+.vscode/
+.idea/
+*.swp
+
+# ---- 本机交接笔记（不公开）----
+HANDOFF.md

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AutoClaim · WorkBuddy 每日积分托管</title>
+<link rel="stylesheet" href="/style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%237C6CF6'/><stop offset='.5' stop-color='%2335D2C8'/><stop offset='1' stop-color='%23F2B65C'/></linearGradient></defs><rect width='32' height='32' rx='9' fill='%230A0E15'/><circle cx='16' cy='16' r='7' fill='url(%23g)'/></svg>" />
+</head>
+<body>
+<div class="aurora" aria-hidden="true">
+  <span class="blob b1"></span>
+  <span class="blob b2"></span>
+  <span class="blob b3"></span>
+  <span class="grain"></span>
+</div>
+
+<div id="connBanner" class="conn-banner" hidden>
+  <span class="conn-dot"></span>
+  <span id="connMsg">无法连接本地服务</span>
+  <button id="connClose" type="button" class="conn-close" aria-label="关闭">×</button>
+</div>
+
+<div class="shell">
+  <!-- ─── 侧栏 ─── -->
+  <aside class="rail">
+    <div class="brand">
+      <div class="mark"></div>
+      <div class="brand-txt">
+        <strong>AutoClaim</strong>
+        <span>WorkBuddy Daily</span>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button class="nav-item active" data-view="overview">
+        <i class="ico ico-grid"></i><span>总览</span>
+      </button>
+      <button class="nav-item" data-view="accounts">
+        <i class="ico ico-acc"></i><span>账号矩阵</span>
+      </button>
+      <button class="nav-item" data-view="pool">
+        <i class="ico ico-spark"></i><span>积分池</span>
+      </button>
+      <button class="nav-item" data-view="console">
+        <i class="ico ico-term"></i><span>运行日志</span>
+      </button>
+      <button class="nav-item" data-view="chat">
+        <i class="ico ico-chat"></i><span>对话</span>
+      </button>
+      <button class="nav-item" data-view="settings">
+        <i class="ico ico-cog"></i><span>策略设置</span>
+      </button>
+    </nav>
+
+    <div class="rail-foot">
+      <div class="live-pill" id="livePill">
+        <span class="dot"></span><span id="liveText">连接中</span>
+      </div>
+      <div class="rail-meta">
+        <span>数据目录</span>
+        <code id="dataDir">—</code>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── 主区 ─── -->
+  <main class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <h1 id="viewTitle">总览</h1>
+        <p id="viewSub">多账号每日积分自动托管 · 到点静默执行</p>
+      </div>
+      <div class="tb-right">
+        <div class="clock">
+          <span class="clock-time tnum" id="clock">--:--</span>
+          <span class="clock-date tnum" id="clockDate"></span>
+        </div>
+        <button class="btn ghost" id="btnAdd"><i class="ico ico-plus"></i>添加账号</button>
+        <button class="btn primary" id="btnRunAll"><span class="btn-label">立即全部领取</span><span class="btn-glow"></span></button>
+      </div>
+    </header>
+
+    <!-- 视图：总览 -->
+    <section class="view active" id="view-overview">
+      <div class="metrics">
+        <article class="metric m-a">
+          <div class="m-head"><span>今日已领</span><i class="ico ico-check"></i></div>
+          <div class="m-val"><em class="tnum" data-count="0" id="mClaimed">0</em><small id="mClaimedOf">/ 0</small></div>
+          <div class="m-bar"><span id="mBar"></span></div>
+        </article>
+        <article class="metric m-b">
+          <div class="m-head"><span>今日积分</span><i class="ico ico-spark"></i></div>
+          <div class="m-val"><em class="tnum" data-count="0" id="mTodayCredit">0</em><small>credits</small></div>
+          <div class="m-sub" id="mTodaySub">等待今日首次执行</div>
+        </article>
+        <article class="metric m-c">
+          <div class="m-head"><span>累计已领</span><i class="ico ico-stack"></i></div>
+          <div class="m-val"><em class="tnum" data-count="0" id="mTotal">0</em><small>credits</small></div>
+          <div class="m-sub" id="mTotalSub">本工具累计签到所得</div>
+        </article>
+        <article class="metric m-d">
+          <div class="m-head"><span>下次执行</span><i class="ico ico-clock"></i></div>
+          <div class="m-val"><em class="tnum" id="mNext">--:--</em><small id="mNextDay">today</small></div>
+          <div class="m-sub" id="mNextSub">按策略静默运行</div>
+        </article>
+      </div>
+
+      <div class="split">
+        <div class="panel">
+          <div class="p-head">
+            <h2>账号状态</h2>
+            <span class="p-hint" id="accHint">0 个账号</span>
+          </div>
+          <div class="acc-list" id="accList"></div>
+        </div>
+
+        <div class="panel console-panel">
+          <div class="p-head">
+            <h2>实时流</h2>
+            <div class="p-head-right">
+              <span class="p-hint tnum" id="streamCount">0</span>
+              <button class="mini-btn" id="btnClearStream">清屏</button>
+            </div>
+          </div>
+          <div class="console" id="consoleMini"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 视图：账号 -->
+    <section class="view" id="view-accounts">
+      <div class="panel">
+        <div class="p-head">
+          <h2>账号矩阵</h2>
+          <div class="p-head-right">
+            <button class="mini-btn" id="btnExport">导出备份</button>
+            <button class="mini-btn" id="btnAdd2">新增</button>
+          </div>
+        </div>
+        <div class="acc-grid" id="accGrid"></div>
+      </div>
+    </section>
+
+    <!-- 视图：积分池 / 统一网关 -->
+    <section class="view" id="view-pool">
+      <div class="pool-hero">
+        <div class="pool-hero-main">
+          <span class="pool-kicker">虚拟主账号 · 各账号已聚合</span>
+          <div class="pool-total"><em class="tnum" id="poolTotal">0</em><small>credits · 各账号总积分汇总</small></div>
+          <p class="pool-note" id="poolNote">正在核算…</p>
+        </div>
+        <div class="pool-facts">
+          <div class="fact"><span>账号</span><em class="tnum" id="poolAccounts">0</em></div>
+          <div class="fact"><span>今日已领</span><em class="tnum" id="poolToday">0</em></div>
+          <div class="fact"><span>日均产能</span><em class="tnum" id="poolCapacity">0</em></div>
+          <div class="fact"><span>连续签到</span><em class="tnum" id="poolStreak">0</em></div>
+        </div>
+      </div>
+
+      <div class="pool-split">
+        <div class="panel">
+          <div class="p-head">
+            <h2>统一网关</h2>
+            <div class="p-head-right">
+              <span class="p-hint" id="gwStatus">检查中</span>
+              <button class="mini-btn" id="btnGwRestart">重启</button>
+            </div>
+          </div>
+          <div class="gw-body">
+            <div class="gw-url">
+              <span class="gw-label">对外唯一入口（客户端只需配这一个）</span>
+              <div class="gw-url-row">
+                <code id="gwBase">http://127.0.0.1:8789/v1</code>
+                <button class="mini-btn" id="btnCopyBase">复制</button>
+              </div>
+            </div>
+            <div class="gw-models" id="gwModels"></div>
+            <table class="gw-table">
+              <thead><tr><th>账号</th><th>账户积分</th><th>网关调用</th><th>状态</th></tr></thead>
+              <tbody id="gwHealthRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="p-head">
+            <h2>怎么用</h2>
+            <span class="p-hint">任选一客户端</span>
+          </div>
+          <div class="usage">
+            <div class="usage-item">
+              <span class="usage-tag">Claude Code</span>
+              <code id="usageClaude">ANTHROPIC_BASE_URL=http://127.0.0.1:8789/v1</code>
+              <button class="mini-btn copy-btn" data-target="usageClaude">复制</button>
+            </div>
+            <div class="usage-item">
+              <span class="usage-tag">Cursor / Continue</span>
+              <code id="usageCursor">Base URL: http://127.0.0.1:8789/v1 · Key: 任意</code>
+              <button class="mini-btn copy-btn" data-target="usageCursor">复制</button>
+            </div>
+            <ul class="usage-tips">
+              <li>所有请求由网关在 <b id="tipAccountCount">0</b> 个账号间自动轮换，谁有额度用谁</li>
+              <li>某账号额度耗尽或掉线，自动跳过并在冷却后重试，请求不中断</li>
+              <li>非流式请求由网关内部转流式再聚合，兼容性不受影响</li>
+              <li>服务启动后网关自动就绪；改端口/密钥后会自动重载</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 视图：日志 -->
+    <section class="view" id="view-console">
+      <div class="panel console-full">
+        <div class="p-head">
+          <h2>运行日志</h2>
+          <div class="p-head-right">
+            <span class="p-hint">实时流式</span>
+            <button class="mini-btn" id="btnClearStream2">清屏</button>
+          </div>
+        </div>
+        <div class="console" id="consoleFull"></div>
+      </div>
+    </section>
+
+    <!-- 视图：对话（走统一网关，零外部客户端） -->
+    <section class="view" id="view-chat">
+      <div class="chat-wrap">
+        <div class="chat-bar">
+          <select id="chatModel" class="chat-sel">
+            <option value="glm-5.3">glm-5.3</option>
+            <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+            <option value="kimi-k2.6">kimi-k2.6</option>
+            <option value="kimi-k3">kimi-k3</option>
+            <option value="gpt-5.4">gpt-5.4</option>
+          </select>
+          <span class="chat-gw" id="chatGw">网关 127.0.0.1:8789</span>
+          <span class="chat-acc" id="chatAcc">— 自动轮换中</span>
+        </div>
+        <div class="chat-log" id="chatLog">
+          <div class="chat-empty">在下方输入消息，请求会自动在 10 个账号间轮换。无需切换账号，所有积分合并使用一个入口。</div>
+        </div>
+        <div class="chat-input">
+          <textarea id="chatText" rows="2" placeholder="问点什么…（Enter 发送 / Shift+Enter 换行）"></textarea>
+          <button class="btn primary" id="btnChatSend">发送</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 视图：设置 -->
+    <section class="view" id="view-settings">
+      <div class="panel settings">
+        <div class="p-head"><h2>策略设置</h2><span class="p-hint">改动即时生效</span></div>
+        <div class="set-grid">
+          <label class="field">
+            <span>每日执行时刻</span>
+            <input type="time" id="setTime" class="tnum" />
+            <small>到点后自动静默签到；错过则在服务重启时补领</small>
+          </label>
+          <label class="field">
+            <span>随机延迟（分钟）</span>
+            <input type="number" id="setJitter" min="0" max="120" class="tnum" />
+            <small>在时刻后随机散开，避免同一秒集中请求</small>
+          </label>
+          <label class="field">
+            <span>失败重试次数</span>
+            <input type="number" id="setRetry" min="1" max="6" class="tnum" />
+            <small>单账号失败后的重试上限</small>
+          </label>
+          <label class="field">
+            <span>API 节点</span>
+            <input type="text" id="setEndpoint" />
+            <small>默认 https://www.workbuddy.cn</small>
+          </label>
+        </div>
+        <div class="toggles">
+          <button class="switch-row" data-key="autoRefresh">
+            <div><strong>令牌自动续期</strong><small>使用 refreshToken 在过期前静默换取新令牌</small></div>
+            <span class="switch"><i></i></span>
+          </button>
+          <button class="switch-row" data-key="catchUp">
+            <div><strong>开机补领</strong><small>关机错过时间点后，开机自动补一次</small></div>
+            <span class="switch"><i></i></span>
+          </button>
+        </div>
+        <div class="set-foot">
+          <button class="btn primary" id="btnSaveSettings">保存策略</button>
+          <span class="p-hint" id="settingsTip"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ─── 新增账号弹层 ─── -->
+<div class="scrim" id="scrim">
+  <div class="modal" id="modal">
+    <header class="modal-head">
+      <h3>添加 WorkBuddy 账号</h3>
+      <button class="mini-btn" id="btnCloseModal">关闭</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="login-block">
+        <div class="login-title">手机号登录 <span class="login-sub">推荐 · 免复制，自动添加</span></div>
+        <div class="login-actions">
+          <button type="button" class="btn primary" id="btnPhoneLogin">打开登录窗口</button>
+          <button type="button" class="btn ghost" id="btnPhoneCancel" style="display:none">取消登录</button>
+        </div>
+        <div class="modal-tip" id="loginStatus"></div>
+        <div class="login-divider">或 · 手动粘贴凭据</div>
+      </div>
+
+      <label class="field">
+        <span>备注名</span>
+        <input type="text" id="inName" placeholder="例如：主力号 / 小号A" />
+      </label>
+
+      <label class="field">
+        <span>登录凭据 <b class="req">整段粘贴 cURL 最省事</b></span>
+        <textarea id="inRaw" rows="5" spellcheck="false" placeholder="手机号登录 workbuddy.cn 后，按 F12 → Network，刷新一下页面，右键列表里任意一条发往 www.workbuddy.cn 的请求 → Copy as cURL(bash)，整段粘到这里即可。无需密码，用的是你登录后的会话令牌（Authorization 或 Cookie 都能识别）。"></textarea>
+        <small>也可直接粘贴：<code>accessToken</code> 空格 <code>X-User-Id</code>，或会话 JSON</small>
+      </label>
+
+      <details class="adv">
+        <summary>手动填写 / 高级字段</summary>
+        <div class="adv-grid">
+          <label class="field"><span>accessToken</span><input id="inToken" placeholder="eyJhbGciOi..." /></label>
+          <label class="field"><span>X-User-Id</span><input id="inUid" placeholder="用户 ID" /></label>
+          <label class="field"><span>refreshToken（可选）</span><input id="inRefresh" placeholder="用于长期自动续期" /></label>
+          <label class="field"><span>X-Device-Token（可选）</span><input id="inDevice" placeholder="风控设备令牌" /></label>
+        </div>
+      </details>
+
+      <div class="modal-tip" id="modalTip"></div>
+    </div>
+
+    <footer class="modal-foot">
+      <button class="btn ghost" id="btnCancel">取消</button>
+      <button class="btn primary" id="btnSubmit">添加并测试</button>
+    </footer>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "wb-autoclaim",
+  "version": "1.0.0",
+  "description": "WorkBuddy 多账号每日积分托管 · 成长任务自动化",
+  "main": "server.js",
+  "bin": "server.js",
+  "pkg": {
+    "scripts": ["server.js"],
+    "assets": ["public/**/*"],
+    "targets": ["node18-win-x64"],
+    "outputPath": "dist"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "build": "pkg . --out-path dist"
+  }
+}
